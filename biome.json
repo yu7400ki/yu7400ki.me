@@ -1,0 +1,48 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.2/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "formatter": { "enabled": true, "useEditorconfig": true },
+  "organizeImports": { "enabled": true },
+  "files": {
+    "ignore": ["public"]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "all": true,
+      "correctness": {
+        "useImportExtensions": "off",
+        "noUndeclaredDependencies": "off",
+        "noUndeclaredVariables": "off"
+      },
+      "performance": {
+        "useTopLevelRegex": "off",
+        "noBarrelFile": "off"
+      },
+      "style": {
+        "noDefaultExport": "off",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": ["kebab-case"]
+          }
+        },
+        "noNamespaceImport": "off",
+        "useNamingConvention": "off"
+      },
+      "suspicious": {
+        "noReactSpecificProps": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": { "quoteStyle": "double" }
+  },
+  "json": {
+    "parser": { "allowComments": true }
+  }
+}

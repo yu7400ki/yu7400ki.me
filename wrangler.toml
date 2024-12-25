@@ -1,0 +1,5 @@
+name = "yu7400ki"
+compatibility_date = "2024-09-19"
+
+[assets]
+directory = "dist"
