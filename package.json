@@ -25,5 +25,8 @@
     "@park-ui/panda-preset": "^0.43.1",
     "vite": "^6.0.5",
     "wrangler": "^3.99.0"
+  },
+  "patchedDependencies": {
+    "@park-ui/panda-preset@0.43.1": "patches/@park-ui%2Fpanda-preset@0.43.1.patch"
   }
 }

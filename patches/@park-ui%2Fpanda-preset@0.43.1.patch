@@ -1,0 +1,22 @@
+diff --git a/dist/index.js b/dist/index.js
+index f35278f6f599ab8723ced8ea02f1fe5c1037af94..ee5d69a0569ba3c0d11af68754606098f9152d2e 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -55,7 +55,7 @@ var globalCss = defineGlobalStyles({
+     color: "fg.subtle"
+   },
+   "*::selection": {
+-    bg: "accent.a4"
++    bg: "colorPalette.a4"
+   }
+ });
+
+@@ -1547,7 +1547,7 @@ var fieldset = defineSlotRecipe16({
+       rowGap: "1.5",
+       gridTemplateAreas: {
+         base: `
+-        "legend legend"
++        "legend legend"
+         "helperText helperText"
+         "control control"
+         "errorText errorText"
