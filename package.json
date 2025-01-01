@@ -22,6 +22,7 @@
     "@hono/vite-dev-server": "^0.17.0",
     "@hono/vite-ssg": "^0.1.0",
     "@pandacss/dev": "^0.51.0",
+    "@park-ui/panda-preset": "^0.43.1",
     "vite": "^6.0.5",
     "wrangler": "^3.99.0"
   }
