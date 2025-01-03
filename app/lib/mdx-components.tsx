@@ -90,7 +90,10 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         props.rel = "noopener noreferrer";
       }
       return (
-        <a {...props} class={cx(props?.class, link())}>
+        <a
+          {...props}
+          class={cx(props?.class, link(), css({ wordBreak: "break-all" }))}
+        >
           {props.children}
         </a>
       );
