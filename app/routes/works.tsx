@@ -1,8 +1,8 @@
 import { createRoute } from "honox/factory";
 import { css } from "../../styled-system/css";
 import { container } from "../../styled-system/patterns";
-import { loadArticles, readArticle } from "../utils/mdx";
 import type { Frontmatter } from "../types";
+import { loadArticles, readArticle } from "../utils/mdx";
 
 export default createRoute(async (c) => {
   const dir = `${import.meta.dirname}/works`;

@@ -82,8 +82,8 @@ function Navigation({ path }: { path: string }) {
       icon: IconLucideCode,
     },
     {
-      label: "Stocks",
-      href: "/stocks",
+      label: "Blog",
+      href: "/blog",
       icon: IconLucideLayers,
     },
   ];
@@ -232,7 +232,13 @@ export default jsxRenderer(({ children, ...meta }, c) => {
           fontFamily: "japanese",
         })}
       >
-        <main>{children}</main>
+        <main
+          class={css({
+            minW: 0,
+          })}
+        >
+          {children}
+        </main>
         <Footer />
         <Navigation path={path} />
       </body>

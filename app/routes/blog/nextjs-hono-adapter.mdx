@@ -1,0 +1,160 @@
+---
+title: "Cloudflare Pagesで動かすNext.js用のHonoのアダプタ"
+date: 2024-03-08
+---
+
+## TL;DR
+
+多分こんな感じ
+
+```typescript
+import { getRequestContext } from "@cloudflare/next-on-pages";
+import type { Hono } from "hono";
+
+export const handle = (app: Hono<any, any, any>) => (req: Request) => {
+  const requestContext = getRequestContext();
+  return app.fetch(req, requestContext.env, requestContext.ctx);
+};
+```
+
+## はじめに
+
+Next.js と Hono、Cloudflare Pages の組み合わせは、個人的にとても気に入っているのですが、一方で気になる点もあります。それは、`Context`から`Bindings`などにアクセス出来ないことです。Honoの優れているところは、取り回しの良さにもあると考えているので、こういった差異はなんとかしたいところです。
+
+という訳で、そのためのアダプタを作ってみました。
+
+## 準備
+
+とりあえず、以下のコードが動くことを目標にします。
+
+```toml
+compatibility_date = "2024-03-04"
+
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "MY_KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+```typescript
+type CloudflareEnv = {
+  MY_KV: KVNamespace;
+}
+```
+
+```typescript
+import { Hono } from "hono";
+
+export const runtime = "edge";
+
+const app = new Hono<{ Bindings: CloudflareEnv }>()
+  .basePath("/api")
+  .get("/hello", async (c) => {
+    let responseText = "Hello World";
+
+    const myKv = c.env.MY_KV;
+    const suffix = await myKv.get("suffix");
+    responseText += suffix ?? "";
+    c.executionCtx.waitUntil(myKv.put("suffix", " from a KV store!"));
+
+    return c.text(responseText);
+  });
+```
+
+## 本題
+
+Vercelにデプロイするのであれば、一般的に`vercel`アダプタを用いると思います。
+
+```diff typescript
+import { Hono } from "hono";
++import { handle } from "hono/vercel";
+
+export const runtime = "edge";
+
+const app = new Hono<{ Bindings: CloudflareEnv }>()
+  .basePath("/api")
+  .get("/hello", async (c) => {
+    let responseText = "Hello World";
+
+    const myKv = c.env.MY_KV;
+    const suffix = await myKv.get("suffix");
+    responseText += suffix ?? "";
+    c.executionCtx.waitUntil(myKv.put("suffix", " from a KV store!"));
+
+    return c.text(responseText);
+  });
+
++export const GET = handle(app);
+```
+
+しかし、前述の通り、`Context`から`Bindings`にアクセス出来ないため、以下のようなエラーが発生します。
+
+```plaintext
+[TypeError: Cannot read properties of undefined (reading 'get')]
+```
+
+参考までに、v4.0.10 時点での`hono/vercel`の実装を覗いてみましょう。
+
+https://github.com/honojs/hono/blob/4ca5f60def726731b3afbf3f6137f0a4b92d8b27/src/adapter/vercel/handler.ts
+
+```typescript
+// @denoify-ignore
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Hono } from '../../hono'
+import type { FetchEventLike } from '../../types'
+
+export const handle =
+  (app: Hono<any, any, any>) => (req: Request, requestContext: FetchEventLike) => {
+    return app.fetch(req, {}, requestContext as any)
+  }
+```
+
+思っていたよりも簡素な実装ですね。
+
+どうやら、`Request`の他に`Env["Bindings"]`と`ExecutionContext`を引数に取るようです。
+
+幸いにも、これらは`@cloudflare/next-on-pages`の`getRequestContext`から取得できます。
+
+これを元に、アダプタを作成してみましょう。
+
+```typescript
+import { getRequestContext } from "@cloudflare/next-on-pages";
+import type { Hono } from "hono";
+
+export const handle = (app: Hono<any, any, any>) => (req: Request) => {
+  const requestContext = getRequestContext();
+  return app.fetch(req, requestContext.env, requestContext.ctx);
+};
+```
+
+これを`hono/vercel`から差し替えれば、`Bindings`や`ExecutionContext`にアクセスできるようになるはずです。
+
+```diff typescript
+import { Hono } from "hono";
+-import { handle } from "hono/vercel";
++import { handle } from "./adapter";
+
+export const runtime = "edge";
+
+const app = new Hono<{ Bindings: CloudflareEnv }>()
+  .basePath("/api")
+  .get("/hello", async (c) => {
+    let responseText = "Hello World";
+
+    const myKv = c.env.MY_KV;
+    const suffix = await myKv.get("suffix");
+    responseText += suffix ?? "";
+    c.executionCtx.waitUntil(myKv.put("suffix", " from a KV store!"));
+
+    return c.text(responseText);
+  });
+
+export const GET = handle(app);
+```
+
+## おわりに
+
+まだ細かい差異はあるかもしれませんが、とりあえずはこんな感じでしょうか。
+
+Honoのアダプタは、他の環墫でも同様に作成できると思いますので、ぜひ試してみてください。

@@ -92,7 +92,6 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       return (
         <a {...props} class={cx(props?.class, link())}>
           {props.children}
-          {!isInternal && <IconLucideExternalLink />}
         </a>
       );
     },

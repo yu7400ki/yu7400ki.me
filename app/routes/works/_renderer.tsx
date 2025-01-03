@@ -61,7 +61,7 @@ export default jsxRenderer(({ children, Layout, frontmatter }) => {
             fontFamily: "latin",
           })}
         >
-          {frontmatter?.links.map((link) => (
+          {frontmatter?.links?.map((link) => (
             <Link href={link} />
           ))}
         </div>

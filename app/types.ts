@@ -4,8 +4,8 @@ export type Meta = {
 
 export type Frontmatter = {
   title: string;
-  description: string;
-  thumbnail: string;
-  links: string[];
   date: Date;
+  description?: string;
+  thumbnail?: string;
+  links?: string[];
 };
