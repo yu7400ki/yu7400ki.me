@@ -1,6 +1,7 @@
 {
   "name": "yu7400ki",
   "short_name": "yu7400ki",
+  "description": "yu7400kiのポートフォリオサイト",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

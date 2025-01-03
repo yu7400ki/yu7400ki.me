@@ -17,7 +17,8 @@
       "correctness": {
         "useImportExtensions": "off",
         "noUndeclaredDependencies": "off",
-        "noUndeclaredVariables": "off"
+        "noUndeclaredVariables": "off",
+        "useJsxKeyInIterable": "off"
       },
       "performance": {
         "useTopLevelRegex": "off",
