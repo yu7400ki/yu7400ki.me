@@ -19,10 +19,19 @@ function Link({ href }: { href: string }) {
   const Icon = getLinkIcon(url.hostname);
 
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" class={link()}>
+    <div
+      class={css({
+        display: "grid",
+        gridTemplateColumns: "auto 1fr",
+        alignItems: "center",
+        gap: "2",
+      })}
+    >
       <Icon />
-      <span>{url.href}</span>
-    </a>
+      <a href={href} target="_blank" rel="noopener noreferrer" class={link()}>
+        {href}
+      </a>
+    </div>
   );
 }
 
