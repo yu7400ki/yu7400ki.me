@@ -1,1 +1,12 @@
 @layer reset, base, tokens, recipes, utilities;
+
+@layer base {
+  @view-transition {
+    /* biome-ignore lint/correctness/noUnknownProperty: */
+    navigation: auto;
+  }
+
+  html {
+    scrollbar-gutter: stable;
+  }
+}
