@@ -192,8 +192,9 @@ function Navigation({ path }: { path: string }) {
   );
 }
 
-export default jsxRenderer(({ children, title }, c) => {
+export default jsxRenderer(({ children, ...meta }, c) => {
   const { path } = c.req;
+  const title = meta.frontmatter?.title ?? meta.title;
   return (
     <html lang="ja">
       <head>
