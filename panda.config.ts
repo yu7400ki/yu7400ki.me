@@ -43,4 +43,6 @@ export default defineConfig({
   ],
   include: ["./app/**/*.{js,jsx,ts,tsx,vue}"],
   outdir: "styled-system",
+  minify: true,
+  hash: true,
 });
