@@ -236,7 +236,6 @@ export default jsxRenderer(({ children, ...meta }, c) => {
         <meta name="twitter:creator" content="@yu7400ki" />
 
         <Link href="/app/global.css" rel="stylesheet" />
-        <Script src="/app/client.ts" async={true} />
         <Script src="/app/theme.ts" />
       </head>
       <body
