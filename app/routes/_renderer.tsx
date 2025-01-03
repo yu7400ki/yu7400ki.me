@@ -217,6 +217,24 @@ export default jsxRenderer(({ children, ...meta }, c) => {
         />
         <meta name="apple-mobile-web-app-title" content={SITE_NAME} />
         <link rel="manifest" href="/webmanifest.json" />
+
+        <meta property="og:url" content={`https://yu7400ki.me${path}`} />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:title"
+          content={title ? `${title} | ${SITE_NAME}` : SITE_NAME}
+        />
+        <meta property="og:description" content={DESCRIPTION} />
+        <meta property="og:image" content="https://yu7400ki.me/og-image.png" />
+        <meta property="og:image:width" content="500" />
+        <meta property="og:image:height" content="500" />
+        <meta property="og:site_name" content={SITE_NAME} />
+        <meta property="og:locale" content="ja_JP" />
+
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:site" content="@yu7400ki" />
+        <meta name="twitter:creator" content="@yu7400ki" />
+
         <Link href="/app/global.css" rel="stylesheet" />
         <Script src="/app/client.ts" async={true} />
         <Script src="/app/theme.ts" />
