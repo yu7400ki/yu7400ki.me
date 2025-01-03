@@ -23,7 +23,7 @@ function Footer() {
   ];
 
   return (
-    <footer>
+    <footer class={css({ alignSelf: "end" })}>
       <div
         class={css({
           display: "grid",
@@ -91,6 +91,7 @@ function Navigation({ path }: { path: string }) {
   return (
     <nav
       class={css({
+        alignSelf: "end",
         position: "sticky",
         bottom: "8",
         zIndex: "1",
@@ -221,6 +222,8 @@ export default jsxRenderer(({ children, title }, c) => {
       </head>
       <body
         class={css({
+          display: "grid",
+          gridTemplateRows: "auto 1fr auto",
           minH: "100dvh",
           color: "fg.default",
           bg: "bg.canvas",
@@ -228,7 +231,7 @@ export default jsxRenderer(({ children, title }, c) => {
           fontFamily: "japanese",
         })}
       >
-        {children}
+        <main>{children}</main>
         <Footer />
         <Navigation path={path} />
       </body>
