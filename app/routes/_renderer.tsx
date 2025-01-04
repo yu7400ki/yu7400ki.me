@@ -6,7 +6,7 @@ import {
 } from "../../public/webmanifest.json";
 import { css, cx } from "../../styled-system/css";
 import { divider } from "../../styled-system/patterns";
-import { Script } from "../components/scripts";
+import { InlineScript } from "../components/scripts";
 
 function Footer() {
   const socials = [
@@ -236,7 +236,7 @@ export default jsxRenderer(({ children, ...meta }, c) => {
         <meta name="twitter:creator" content="@yu7400ki" />
 
         <Link href="/app/global.css" rel="stylesheet" />
-        <Script src="/app/theme.ts" />
+        <InlineScript src="/app/theme.ts" />
       </head>
       <body
         class={css({
