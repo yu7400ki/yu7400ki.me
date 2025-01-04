@@ -1,0 +1,56 @@
+---
+title: "GitHubのPermalinkから埋め込みを作る"
+date: 2025-01-05
+---
+
+## はじめに
+
+記事にGitHubのコードを埋め込みたくなったので作りました。
+以下のような感じになりました。
+
+https://github.com/yu7400ki/yu7400ki.me/blob/777deebfa9d008805537fccc5340b0d0620112d7/tsconfig.json
+
+ちなみに、リンクはこのサイトの`tsconfig.json`へのリンクです。
+
+## Permalinkからコードを取得する
+
+まずは、Permalinkからコードを取得してみます。
+
+```typescript
+export async function fetchPermalink(permalink: string) {
+  const response = await fetch(permalink, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+  const { title, payload } = await response.json();
+  return {
+    title,
+    lines: payload.blob.rawLines,
+    language: payload.blob.language,
+  };
+}
+```
+
+Acceptヘッダーに`application/json`を指定してみたらJSON形式で取得できました。試してみるもんですね。
+
+今回はタイトルとコードと言語が欲しいので、それだけ取り出しています。
+
+## コンポーネントを作る
+
+次は、取得したコードを表示するコンポーネントを作ります。
+参考までに、このサイトで使ってるコンポーネントを載せておきます。
+
+https://github.com/yu7400ki/yu7400ki.me/blob/9d69c9b40285bb44965cb430e2195ec4e3121ecd/app/components/github-embed.tsx#L24-L79
+
+`parsePermalink`はその名の通り、Permalinkをパースする関数です。
+ここらへんはChatGPTにリンクの例を投げて書かせると良いでしょう。
+
+その他この記事に登場しない部分は、リポジトリを見てみてください。
+多分オープンにしてるはずなので。
+
+## おわりに
+
+どうやって実装するか悩んでいたのですが、Acceptヘッダーに気づけた時点で9割くらい解決していました。
+
+せっかく作ったブログ欄に何を載せるか悩んでいたので、軽めのネタが湧いてきて渡りに船でした。
