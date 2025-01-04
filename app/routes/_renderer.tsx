@@ -6,6 +6,7 @@ import {
 } from "../../public/webmanifest.json";
 import { css, cx } from "../../styled-system/css";
 import { divider } from "../../styled-system/patterns";
+import { ContentSecurityPolicy } from "../components/content-security-policy";
 import { InlineScript } from "../components/scripts";
 
 function Footer() {
@@ -218,9 +219,12 @@ export default jsxRenderer(({ children, ...meta }, c) => {
         <meta name="apple-mobile-web-app-title" content={SITE_NAME} />
         <link rel="manifest" href="/webmanifest.json" />
 
-        <meta
-          httpEquiv="content-security-policy"
-          content="default-src 'self'"
+        <ContentSecurityPolicy
+          content={{
+            "default-src": ["'self'"],
+            "script-src": ["'self'"],
+          }}
+          inlineScripts={["/app/theme.ts"]}
         />
 
         <meta property="og:url" content={`https://yu7400ki.me${path}`} />
