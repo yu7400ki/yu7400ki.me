@@ -73,7 +73,7 @@ export async function fetchPermalink(permalink: string) {
   return {
     title,
     lines: payload.blob.rawLines,
-    language: payload.blob.language.toLowerCase(),
+    language: payload.blob.language,
   };
 }
 
