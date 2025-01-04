@@ -225,9 +225,9 @@ export default jsxRenderer(({ children, ...meta }, c) => {
           content={title ? `${title} | ${SITE_NAME}` : SITE_NAME}
         />
         <meta property="og:description" content={DESCRIPTION} />
-        <meta property="og:image" content="https://yu7400ki.me/og-image.png" />
-        <meta property="og:image:width" content="500" />
-        <meta property="og:image:height" content="500" />
+        <meta property="og:image" content="https://yu7400ki.me/icon.webp" />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
         <meta property="og:site_name" content={SITE_NAME} />
         <meta property="og:locale" content="ja_JP" />
 
