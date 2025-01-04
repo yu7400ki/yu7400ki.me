@@ -1,6 +1,7 @@
 import type { MDXComponents } from "mdx/types";
 import { css, cva, cx } from "../../styled-system/css";
 import { code, link, table, text } from "../../styled-system/recipes";
+import GithubEmbed from "../components/github-embed";
 
 const tableStyle = table({ variant: "outline" });
 
@@ -28,6 +29,7 @@ const listRecipe = cva({
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
+    GithubEmbed: GithubEmbed,
     h1: (props) => (
       <h1 {...props} class={cx(props?.class, text({ size: "4xl" }))} />
     ),
@@ -54,7 +56,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         {...props}
         class={cx(
           props?.class,
-          css({ p: 4, rounded: "md", overflowX: "auto" }),
+          css({ p: 4, rounded: "md", overflowX: "auto", lineHeight: "normal" }),
         )}
       />
     ),

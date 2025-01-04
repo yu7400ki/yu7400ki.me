@@ -14,6 +14,7 @@ import AutoImport from "unplugin-auto-import/vite";
 import IconsResolver from "unplugin-icons/resolver";
 import Icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
+import { remarkGithubPermalinks } from "./app/lib/github";
 
 const entry = "./app/server.ts";
 
@@ -66,6 +67,7 @@ export default defineConfig(({ mode }) => {
           remarkMdxFrontmatter,
           remarkBreaks,
           remarkGfm,
+          remarkGithubPermalinks,
         ],
         rehypePlugins: [
           [rehypeShiki, { theme: "github-dark" }],

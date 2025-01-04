@@ -98,18 +98,6 @@ const app = new Hono<{ Bindings: CloudflareEnv }>()
 
 https://github.com/honojs/hono/blob/4ca5f60def726731b3afbf3f6137f0a4b92d8b27/src/adapter/vercel/handler.ts
 
-```typescript
-// @denoify-ignore
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Hono } from '../../hono'
-import type { FetchEventLike } from '../../types'
-
-export const handle =
-  (app: Hono<any, any, any>) => (req: Request, requestContext: FetchEventLike) => {
-    return app.fetch(req, {}, requestContext as any)
-  }
-```
-
 思っていたよりも簡素な実装ですね。
 
 どうやら、`Request`の他に`Env["Bindings"]`と`ExecutionContext`を引数に取るようです。
