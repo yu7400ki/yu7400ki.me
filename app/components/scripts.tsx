@@ -95,13 +95,5 @@ export const InlineScript = async (
     }
     return <></>;
   }
-  const file = await fs.readFile(`dist/${src}`, "utf-8");
-  return (
-    <script
-      type={type}
-      nonce={options.nonce}
-      // biome-ignore lint/security/noDangerouslySetInnerHtml:
-      dangerouslySetInnerHTML={{ __html: file }}
-    />
-  );
+  return <script type={type} src={src} nonce={options.nonce} />;
 };
