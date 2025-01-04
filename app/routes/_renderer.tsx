@@ -218,6 +218,11 @@ export default jsxRenderer(({ children, ...meta }, c) => {
         <meta name="apple-mobile-web-app-title" content={SITE_NAME} />
         <link rel="manifest" href="/webmanifest.json" />
 
+        <meta
+          httpEquiv="content-security-policy"
+          content="default-src 'self'"
+        />
+
         <meta property="og:url" content={`https://yu7400ki.me${path}`} />
         <meta property="og:type" content="website" />
         <meta
