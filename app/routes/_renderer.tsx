@@ -223,6 +223,7 @@ export default jsxRenderer(({ children, ...meta }, c) => {
           content={{
             "default-src": ["'self'"],
             "script-src": ["'self'"],
+            "style-src": ["'self'", "'unsafe-inline'"],
           }}
           inlineScripts={["/app/theme.ts"]}
         />
