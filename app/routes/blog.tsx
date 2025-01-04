@@ -46,10 +46,13 @@ export default createRoute(async (c) => {
             href={`blog/${slug}`}
             class={css({
               display: "flex",
-              alignItems: "center",
-              gap: "6",
+              flexDirection: "column",
+              gap: "2",
               fontSize: "lg",
               sm: {
+                gap: "6",
+                alignItems: "center",
+                flexDirection: "row",
                 fontSize: "xl",
               },
               _hover: {
