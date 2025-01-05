@@ -48,6 +48,7 @@ export default createRoute(async (c) => {
             href={`works/${slug}`}
             class={css({
               display: "grid",
+              alignContent: "start",
               _hover: {
                 color: "colorPalette.text",
               },
