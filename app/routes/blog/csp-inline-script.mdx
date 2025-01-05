@@ -1,0 +1,85 @@
+---
+title: "Content Security Policyとインラインスクリプト"
+date: 2025-01-06
+---
+
+## Content Security Policy(CSP)とは
+
+Content Security Policy(CSP)は、Webサイトのセキュリティを向上させるための仕組みで、ブラウザがロードするリソースの制御を行うことができます。これにより、クロスサイトスクリプティングやデータインジェクションなどの攻撃の影響を軽減することができます。
+
+CSPはHTTPヘッダーやmetaタグを使用して設定することができます。
+
+- HTTPヘッダー
+
+```http
+Content-Security-Policy: default-src 'self'
+```
+
+- metaタグ
+
+```html
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'" />
+```
+
+この例では、`default-src`ディレクティブに`'self'`を指定しています。これにより、同一オリジンからのリソースのみが許可されます。
+
+詳しい説明は[MDN Web Docs](https://developer.mozilla.org/ja/docs/Web/HTTP/CSP)を参照してください。
+
+## インラインスクリプト
+
+さて、CSPの説明が終わったところで、本題に入ります。
+
+このサイトでは元々、上記の例のように`default-src 'self'`を設定していました。
+
+しかし、いざビルドしてみると、インラインスクリプトが読み込まれないことに気づきました。
+（ビルド時にminifyしたコードをインラインスクリプトとして埋め込んでいるため、開発時には問題なく動作していました）
+
+どうやら、'self'だけではインラインスクリプトをブロックするようです。
+
+インラインスクリプトを許可するには、以下の方法があります。
+
+### unsafe-inline
+
+あらゆるインラインスクリプトを許可しますが、セキュリティ上のリスクが高まります。
+CSPを設定する価値が損なわれるため、推奨されません。
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'unsafe-inline'
+```
+
+### nonce
+
+ランダムな値をnonceとして設定し、そのnonceを持つスクリプトのみを許可します。
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'nonce-<random-value>'
+```
+
+### hash
+
+スクリプトのハッシュ値を指定し、そのハッシュ値のスクリプトのみを許可します。
+ハッシュ値はbase64エンコードされたものを設定します。
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'sha256-<base64-encoded-hash>'
+```
+
+## どれを選ぶか
+
+このサイトはサーバーを持たない静的サイトであるという前提を踏まえて、どれを選ぶか考えてみます。
+
+- unsafe-inline
+  - 最も楽だが、本来の目的が損なわれる
+- nonce
+  - リクエストごとにランダムな値を生成する必要がある
+- hash
+  - ハッシュ値を生成する手間がかかる
+
+nonceかhashの二択なのですが、このサイトはビルド後にHTMLの内容が変わることはないため、hashを選択することにしました。
+手間と言ってもビルド時にハッシュ値を生成するスクリプトを書けば、それほど大きな問題ではありません。
+
+ちなみにサーバーがある場合は、基本nonce一択だと思います。
+
+## 最後に
+
+このサイトではCSPをmetaタグで設定しているので、正直効果は薄いんじゃないかと思っています。
