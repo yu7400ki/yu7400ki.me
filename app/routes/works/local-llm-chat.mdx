@@ -1,0 +1,17 @@
+---
+title: LocalLLMChat
+description: GGMLで量子化されたLLMを動かすアプリ
+thumbnail: /img/local-llm-chat.png
+links:
+  - https://github.com/yu7400ki/LocalLLMChat
+date: 2023-07-01
+---
+
+ローカルLLMをGUIで遊びたかったので作りました。
+この頃は試験でのルール整備が甘かったので、あわよくばLLMで無双したかったというのもあります。
+
+また、ローカルLLMの布教も兼ねていたので、設定項目はなるべく少なくして、初心者でもなるべく簡単に扱えるように心がけました。
+
+フロントエンドはNext.jsで、バックエンドはRustです。Tauriを使ってデスクトップアプリにしています。
+LLMの推論には[rustformers/llm](https://github.com/rustformers/llm)を使用しています。
+ドキュメントが更新されておらず、実装には苦労しましたが、なんとか動くようになりました。
