@@ -1,0 +1,18 @@
+---
+title: zstd-wasm
+description: zstdでデータを圧縮および解凍するためのライブラリ
+thumbnail: /img/zstd-wasm.png
+links:
+  - https://github.com/yu7400ki/zstd-wasm
+  - https://jsr.io/@yu7400ki/zstd-wasm
+date: 2024-11-01
+---
+
+Cloudflare Workersでzstdの圧縮をしたくなったので作りました。
+
+[facebook/zstd](https://github.com/facebook/zstd)をWebAssemblyにコンパイルしています。
+環境構築が面倒なので、Dockerを使ってビルドしています。
+
+ESMとCloudflare Workersに対応してるはずです。
+
+初めて[jsr](https://jsr.io)を使ってみましたが、とても便利ですね。
