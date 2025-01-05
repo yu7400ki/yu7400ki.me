@@ -222,7 +222,7 @@ export default jsxRenderer(({ children, ...meta }, c) => {
         <ContentSecurityPolicy
           content={{
             "default-src": ["'self'"],
-            "script-src": ["'self'"],
+            "script-src": ["'self'", "static.cloudflareinsights.com"],
             "style-src": ["'self'", "'unsafe-inline'"],
           }}
           inlineScripts={["/app/theme.ts"]}
