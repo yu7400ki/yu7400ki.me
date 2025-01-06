@@ -37,7 +37,7 @@ export const ContentSecurityPolicy = async (options: Options) => {
           `dist/${scriptInManifest.file}`,
           "utf-8",
         );
-        const hash = await sha256(Buffer.from(file));
+        const hash = await sha256(Buffer.from(file.trim()));
         const b64 = encodeBase64(hash);
         if (!options.content["script-src"]) {
           options.content["script-src"] = [];

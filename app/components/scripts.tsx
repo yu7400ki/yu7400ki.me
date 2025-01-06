@@ -88,7 +88,7 @@ export const InlineScript = async (
             type={type}
             nonce={options.nonce}
             // biome-ignore lint/security/noDangerouslySetInnerHtml:
-            dangerouslySetInnerHTML={{ __html: file }}
+            dangerouslySetInnerHTML={{ __html: file.trim() }}
           />
         );
       }
