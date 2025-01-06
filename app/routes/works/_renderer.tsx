@@ -1,5 +1,5 @@
 import { jsxRenderer } from "hono/jsx-renderer";
-import { css } from "../../../styled-system/css";
+import { css, cx } from "../../../styled-system/css";
 import { container } from "../../../styled-system/patterns";
 import { link } from "../../../styled-system/recipes";
 
@@ -28,7 +28,12 @@ function Link({ href }: { href: string }) {
       })}
     >
       <Icon />
-      <a href={href} target="_blank" rel="noopener noreferrer" class={link()}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        class={cx(link(), css({ wordBreak: "break-word" }))}
+      >
         {href}
       </a>
     </div>
