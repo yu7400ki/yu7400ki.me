@@ -45,7 +45,8 @@ export default async function GithubEmbed({ permalink }: Props) {
           gap: 2,
           gridTemplateColumns: "auto 1fr",
           alignItems: "center",
-          p: 2,
+          py: 2,
+          px: 4,
           fontSize: "xs",
           bg: "bg.emphasized",
           fontFamily: "latin",
@@ -65,15 +66,50 @@ export default async function GithubEmbed({ permalink }: Props) {
       </div>
       <div
         class={css({
-          "& > pre": {
-            p: 4,
-            overflowX: "auto",
-            lineHeight: "normal",
-          },
+          maxH: "md",
+          overflowY: "auto",
+          display: "grid",
+          gridTemplateColumns: "auto 1fr",
+          gridTemplateRows: "auto",
+          fontSize: "sm",
         })}
-        // biome-ignore lint/security/noDangerouslySetInnerHtml:
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      >
+        <pre
+          class={css({
+            p: 4,
+            color: "colorPalette.fg",
+            gridColumn: "1 / 2",
+            gridRow: "1 / 2",
+            zIndex: 1,
+            userSelect: "none",
+            textAlign: "right",
+          })}
+        >
+          {Array.from({ length: lineEnd - line + 1 }, (_, i) => (
+            <div>{line + i}</div>
+          ))}
+        </pre>
+        <div
+          class={css({
+            gridColumn: "1 / 3",
+            gridRow: "1 / 2",
+            display: "grid",
+            gridTemplateColumns: "subgrid",
+            "& > pre": {
+              display: "grid",
+              gridTemplateColumns: "subgrid",
+              gridColumn: "1 / 3",
+              p: 4,
+              overflowX: "auto",
+              "& > code": {
+                gridColumn: "2 / 3",
+              },
+            },
+          })}
+          // biome-ignore lint/security/noDangerouslySetInnerHtml:
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
     </div>
   );
 }
