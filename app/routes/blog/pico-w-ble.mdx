@@ -1,0 +1,313 @@
+---
+title: "RustとRaspberry Pi Pico WでBLEをスキャンする"
+date: 2025-01-11
+---
+
+授業でRaspberry Pi Pico Wを使う機会があったのですが、一身上の都合でC言語やMicroPythonを使うことが出来ないので、Rustで頑張ってみます。
+
+## 環境
+
+- Raspberry Pi Pico W
+- Rust 1.83.0
+
+## 依存関係のインストール
+
+Raspberry Pi Pico Wに搭載されたRP2040はARM Cortex-M0+なので、クロスコンパイラが必要です。
+
+```bash
+rustup target add thumbv6m-none-eabi
+```
+
+その他にリンカーやランナーもインストールします。
+
+```bash
+cargo install flip-link elf2uf2-rs
+```
+
+## プロジェクトの作成
+
+```bash
+cargo init
+```
+
+### ライブラリの追加
+
+以下の2つのライブラリを`/lib`以下にsubmoduleとして追加します。
+
+- [embassy](https://github.com/embassy-rs/embassy) ([92326f1](https://github.com/embassy-rs/embassy/commit/92326f10b5be1d6fdc6bd414eb0656e3890bd825))
+- [trouble](https://github.com/embassy-rs/trouble) ([419e298](https://github.com/embassy-rs/trouble/commit/419e29886ee696570f0513b76b7aa52f82a19ff5))
+
+```bash
+mkdir lib
+git submodule add https://github.com/embassy-rs/embassy.git lib/embassy
+git submodule add https://github.com/embassy-rs/trouble.git lib/trouble
+```
+
+`Cargo.toml`に以下の設定を追加します。
+`embassy-time-driver`は頑張ってもバージョンがコンフリクトしたので、patchで解決しました。
+
+```toml filename="Cargo.toml"
+[dependencies]
+embassy-sync = { version = "0.6", path = "lib/embassy/embassy-sync", features = ["defmt"] }
+embassy-executor = { version = "0.7", path = "lib/embassy/embassy-executor", default-features = false, features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "defmt", "executor-interrupt"] }
+embassy-time = { version = "0.4.0", path = "lib/embassy/embassy-time", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
+embassy-rp = { version = "0.3.0", path = "lib/embassy/embassy-rp", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp2040"] }
+embassy-usb = { version = "0.3.0", path = "lib/embassy/embassy-usb", features = ["defmt"] }
+embassy-usb-logger = { version = "0.2.0", path = "lib/embassy/embassy-usb-logger" }
+embassy-futures = { version = "0.1.1", path = "lib/embassy/embassy-futures" }
+
+trouble-host = { path = "lib/trouble/host", features = ["scan"] }
+bt-hci = { version = "0.2", default-features = false, features = ["defmt"] }
+
+futures = { version = "0.3", default-features = false, features = ["async-await"]}
+cyw43 = { version = "0.3.0", path = "lib/embassy/cyw43", features = ["defmt", "firmware-logs", "bluetooth"] }
+cyw43-pio = { version = "0.3.0", path = "lib/embassy/cyw43-pio", features = ["defmt"] }
+
+defmt = "0.3"
+defmt-rtt = "0.4.0"
+
+cortex-m = { version = "0.7.6" }
+cortex-m-rt = "0.7.0"
+panic-probe = { version = "0.3", features = ["print-defmt"] }
+static_cell = "2"
+portable-atomic = { version = "1.5", features = ["critical-section"] }
+log = "0.4"
+
+[patch.crates-io]
+embassy-time-driver = { path = "lib/embassy/embassy-time-driver" }
+```
+
+### その他に必要そうなファイルと設定
+
+```bash
+cp lib/embassy/examples/rp/build.rs .
+cp lib/embassy/examples/rp/memory.x .
+cp -r lib/embassy/examples/rp/.cargo .
+cp -r lib/embassy/cyw43-firmware lib
+```
+
+`.cargo/config.toml`の`runner`は、`elf2uf2-rs`を使うように設定します。
+
+```toml filename=".cargo/config.toml"
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+runner = "probe-rs run --chip RP2040" # [!code --]
+runner = "elf2uf2-rs -d" # [!code ++]
+
+[build]
+target = "thumbv6m-none-eabi"        # Cortex-M0 and Cortex-M0+
+
+[env]
+DEFMT_LOG = "debug"
+```
+
+---
+
+ここまでで以下のようになっているはずです。
+
+```plaintext
+.
+├── .cargo
+│   └── config.toml
+├── .gitignore
+├── .gitmodules
+├── Cargo.lock
+├── Cargo.toml
+├── build.rs
+├── lib
+│   ├── cyw43-firmware
+│   ├── embassy
+│   └── trouble
+├── memory.x
+└── src
+    └── main.rs
+```
+
+## Hello World
+
+PicoはUSB経由でシリアル通信が出来るので、`Hello, World!`を送信してみます。
+
+```rust filename="src/main.rs"
+#![no_std]
+#![no_main]
+
+use embassy_executor::Spawner;
+use embassy_rp::bind_interrupts;
+use embassy_rp::peripherals::USB;
+use embassy_rp::usb::{Driver, InterruptHandler};
+use embassy_time::Timer;
+use {defmt_rtt as _, panic_probe as _};
+
+bind_interrupts!(struct Irqs {
+    USBCTRL_IRQ => InterruptHandler<USB>;
+});
+
+#[embassy_executor::task]
+async fn logger_task(driver: Driver<'static, USB>) {
+    embassy_usb_logger::run!(1024, log::LevelFilter::Info, driver);
+}
+
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    let p = embassy_rp::init(Default::default());
+    let driver = Driver::new(p.USB, Irqs);
+    spawner.spawn(logger_task(driver)).unwrap();
+
+    loop {
+        log::info!("Hello, world!");
+        Timer::after_secs(1).await;
+    }
+}
+```
+
+BOOTSELを押しながら接続し、`cargo run`でビルドして書き込みます。
+
+```bash
+cargo run --release
+```
+
+うまくいけば、`Hello, world!`が1秒毎に表示されます。
+
+![Hello, world!](/img/blog/pico-w-ble/hello-world.png)
+
+## BLEのスキャン
+
+まずはBluetoothにアクセスするためのセットアップを行います。
+
+```rust filename="src/main.rs"
+#![no_std]
+#![no_main]
+
+use bt_hci::controller::ExternalController;
+use cyw43_pio::PioSpi;
+use defmt::*;
+use embassy_executor::Spawner;
+use embassy_rp::bind_interrupts;
+use embassy_rp::gpio::{Level, Output};
+use embassy_rp::peripherals::{DMA_CH0, PIO0, USB};
+use embassy_rp::pio::{InterruptHandler as PioInterruptHandler, Pio};
+use embassy_rp::usb::{Driver, InterruptHandler as UsbInterruptHandler};
+use static_cell::StaticCell;
+use {defmt_rtt as _, embassy_time as _, panic_probe as _};
+
+bind_interrupts!(struct Irqs {
+    USBCTRL_IRQ => UsbInterruptHandler<USB>;
+    PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
+});
+
+#[embassy_executor::task]
+async fn logger_task(driver: Driver<'static, USB>) {
+    embassy_usb_logger::run!(1024, log::LevelFilter::Info, driver);
+}
+
+#[embassy_executor::task]
+async fn cyw43_task(
+    runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
+) -> ! {
+    runner.run().await
+}
+
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    let p = embassy_rp::init(Default::default());
+    let driver = Driver::new(p.USB, Irqs);
+    spawner.spawn(logger_task(driver)).unwrap();
+
+    let fw = include_bytes!("../lib/cyw43-firmware/43439A0.bin");
+    let clm = include_bytes!("../lib/cyw43-firmware/43439A0_clm.bin");
+    let btfw = include_bytes!("../lib/cyw43-firmware/43439A0_btfw.bin");
+
+    let pwr = Output::new(p.PIN_23, Level::Low);
+    let cs = Output::new(p.PIN_25, Level::High);
+    let mut pio = Pio::new(p.PIO0, Irqs);
+    let spi = PioSpi::new(
+        &mut pio.common,
+        pio.sm0,
+        cyw43_pio::DEFAULT_CLOCK_DIVIDER,
+        pio.irq0,
+        cs,
+        p.PIN_24,
+        p.PIN_29,
+        p.DMA_CH0,
+    );
+
+    static STATE: StaticCell<cyw43::State> = StaticCell::new();
+    let state = STATE.init(cyw43::State::new());
+    let (_net_device, bt_device, mut control, runner) =
+        cyw43::new_with_bluetooth(state, pwr, spi, fw, btfw).await;
+    unwrap!(spawner.spawn(cyw43_task(runner)));
+    control.init(clm).await;
+
+    let controller: ExternalController<_, 10> = ExternalController::new(bt_device);
+}
+```
+
+次にスキャナーを追加します。
+
+```rust filename="src/scanner.rs"
+use bt_hci::cmd::le::{LeSetScanEnable, LeSetScanParams};
+use bt_hci::controller::ControllerCmdSync;
+use embassy_futures::join::join;
+use trouble_host::prelude::*;
+
+/// Size of L2CAP packets
+const L2CAP_MTU: usize = 128;
+
+/// Max number of connections
+const CONNECTIONS_MAX: usize = 1;
+
+/// Max number of L2CAP channels.
+const L2CAP_CHANNELS_MAX: usize = 3; // Signal + att + CoC
+
+type Resources<C> = HostResources<C, CONNECTIONS_MAX, L2CAP_CHANNELS_MAX, L2CAP_MTU>;
+
+pub async fn scan<C>(controller: C)
+where
+    C: Controller + ControllerCmdSync<LeSetScanParams> + ControllerCmdSync<LeSetScanEnable>,
+{
+    let mut resources = Resources::new(PacketQos::None);
+    let (_stack, _, mut central, mut runner) =
+        trouble_host::new(controller, &mut resources).build();
+
+    let config = ScanConfig {
+        ..Default::default()
+    };
+
+    log::info!("Scanning for peripheral...");
+    let _ = join(runner.run(), async {
+        loop {
+            let result = central.scan(&config).await.unwrap();
+            for report in result.iter() {
+                report
+                    .map(|report| {
+                        log::info!("Peripheral found: {:?} {:?}", report.addr, report.addr_kind);
+                    })
+                    .ok();
+            }
+        }
+    })
+    .await;
+}
+```
+
+```rust filename="src/main.rs"
+mod scanner; // [!code ++]
+
+// ...
+
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    // ...
+
+    let controller: ExternalController<_, 10> = ExternalController::new(bt_device);
+
+    scanner::scan(controller).await; // [!code ++]
+}
+```
+
+これで、BLEのスキャンが出来るはずです。
+
+```bash
+cargo run --release
+```
+
+![BLE Scanner](/img/blog/pico-w-ble/ble-scanner.png)
