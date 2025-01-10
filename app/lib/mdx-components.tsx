@@ -58,21 +58,56 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         class={cx(
           props?.class,
           css({
-            p: 4,
+            py: 4,
             rounded: "md",
             overflowX: "auto",
             lineHeight: "normal",
+            "& > code": {
+              display: "inline-block",
+              minW: "full",
+              px: 5,
+            },
             "&[data-filename]::before": {
               content: "attr(data-filename)",
               display: "block",
               px: 2,
               py: 1,
+              ml: 5,
               mt: -4,
               mb: 2,
               fontSize: "sm",
               bg: "gray.dark.7",
               roundedBottom: "md",
               width: "fit-content",
+            },
+            "& code > span.line.diff": {
+              position: "relative",
+              display: "inline-block",
+              width: "calc(token(spacing.10) + 100%)",
+              my: 0,
+              mx: -5,
+              px: 5,
+              _before: {
+                position: "absolute",
+                display: "flex",
+                alignItems: "center",
+                insetY: 0,
+                left: 1.5,
+              },
+            },
+            "& code > span.line.diff.add": {
+              bg: "rgba(16, 185, 30, 0.16)",
+              color: "rgb(61, 214, 140)",
+              _before: {
+                content: "'+'",
+              },
+            },
+            "& code > span.line.diff.remove": {
+              bg: "rgba(220, 53, 69, 0.16)",
+              color: "rgb(248, 113, 117)",
+              _before: {
+                content: "'-'",
+              },
             },
           }),
         )}

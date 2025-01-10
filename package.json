@@ -28,6 +28,7 @@
     "@pandacss/dev": "^0.51.0",
     "@park-ui/panda-preset": "^0.43.1",
     "@shikijs/rehype": "^1.26.1",
+    "@shikijs/transformers": "^1.26.1",
     "@std/yaml": "npm:@jsr/std__yaml",
     "@svgr/core": "^8.1.0",
     "@svgr/plugin-jsx": "^8.1.0",

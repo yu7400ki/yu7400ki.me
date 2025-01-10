@@ -1,6 +1,7 @@
 import ssg from "@hono/vite-ssg";
 import mdx from "@mdx-js/rollup";
 import rehypeShiki from "@shikijs/rehype";
+import { transformerNotationDiff } from "@shikijs/transformers";
 import honox from "honox/vite";
 import { devServerDefaultOptions } from "honox/vite";
 import client from "honox/vite/client";
@@ -75,6 +76,7 @@ export default defineConfig(({ mode }) => {
             {
               theme: "github-dark",
               parseMetaString,
+              transformers: [transformerNotationDiff()],
             },
           ],
           () => (tree) => {
