@@ -27,7 +27,7 @@ Next.js と Hono、Cloudflare Pages の組み合わせは、個人的にとて�
 
 とりあえず、以下のコードが動くことを目標にします。
 
-```toml
+```toml filename="wrangler.toml"
 compatibility_date = "2024-03-04"
 
 compatibility_flags = ["nodejs_compat"]
@@ -37,13 +37,13 @@ binding = "MY_KV"
 id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
-```typescript
+```typescript filename="env.d.ts"
 type CloudflareEnv = {
   MY_KV: KVNamespace;
 }
 ```
 
-```typescript
+```typescript filename="route.ts"
 import { Hono } from "hono";
 
 export const runtime = "edge";
@@ -66,9 +66,9 @@ const app = new Hono<{ Bindings: CloudflareEnv }>()
 
 Vercelにデプロイするのであれば、一般的に`vercel`アダプタを用いると思います。
 
-```diff typescript
+```typescript
 import { Hono } from "hono";
-+import { handle } from "hono/vercel";
+import { handle } from "hono/vercel"; // [!code ++]
 
 export const runtime = "edge";
 
@@ -85,7 +85,7 @@ const app = new Hono<{ Bindings: CloudflareEnv }>()
     return c.text(responseText);
   });
 
-+export const GET = handle(app);
+export const GET = handle(app); // [!code ++]
 ```
 
 しかし、前述の通り、`Context`から`Bindings`にアクセス出来ないため、以下のようなエラーが発生します。
@@ -106,7 +106,7 @@ https://github.com/honojs/hono/blob/4ca5f60def726731b3afbf3f6137f0a4b92d8b27/src
 
 これを元に、アダプタを作成してみましょう。
 
-```typescript
+```typescript filename="adapter.ts"
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import type { Hono } from "hono";
 
@@ -118,10 +118,10 @@ export const handle = (app: Hono<any, any, any>) => (req: Request) => {
 
 これを`hono/vercel`から差し替えれば、`Bindings`や`ExecutionContext`にアクセスできるようになるはずです。
 
-```diff typescript
+```typescript filename="route.ts"
 import { Hono } from "hono";
--import { handle } from "hono/vercel";
-+import { handle } from "./adapter";
+import { handle } from "hono/vercel"; // [!code --]
+import { handle } from "./adapter"; // [!code ++]
 
 export const runtime = "edge";
 
