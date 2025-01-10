@@ -70,7 +70,13 @@ export default defineConfig(({ mode }) => {
           remarkGithubPermalinks,
         ],
         rehypePlugins: [
-          [rehypeShiki, { theme: "github-dark" }],
+          [
+            rehypeShiki,
+            {
+              theme: "github-dark",
+              parseMetaString,
+            },
+          ],
           () => (tree) => {
             visit(tree, "element", (node) => {
               if (node?.type !== "element" || node?.tagName !== "pre") {
@@ -92,3 +98,14 @@ export default defineConfig(({ mode }) => {
     ],
   };
 });
+
+function parseMetaString(metaString = ""): Record<string, string> {
+  const regex = /(\w+)="([^"]*)"/g;
+  const meta: Record<string, string> = {};
+  let match = regex.exec(metaString);
+  while (match) {
+    meta[match[1]] = match[2];
+    match = regex.exec(metaString);
+  }
+  return meta;
+}

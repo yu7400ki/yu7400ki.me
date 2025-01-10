@@ -51,12 +51,30 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     code: (props) => (
       <code {...props} class={props?.class ?? cx(code(), css({ mx: 0.5 }))} />
     ),
-    pre: (props) => (
+    pre: ({ filename, ...props }) => (
       <pre
         {...props}
+        data-filename={filename}
         class={cx(
           props?.class,
-          css({ p: 4, rounded: "md", overflowX: "auto", lineHeight: "normal" }),
+          css({
+            p: 4,
+            rounded: "md",
+            overflowX: "auto",
+            lineHeight: "normal",
+            "&[data-filename]::before": {
+              content: "attr(data-filename)",
+              display: "block",
+              px: 2,
+              py: 1,
+              mt: -4,
+              mb: 2,
+              fontSize: "sm",
+              bg: "gray.dark.7",
+              roundedBottom: "md",
+              width: "fit-content",
+            },
+          }),
         )}
       />
     ),
