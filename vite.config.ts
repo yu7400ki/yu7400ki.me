@@ -5,10 +5,12 @@ import { transformerNotationDiff } from "@shikijs/transformers";
 import honox from "honox/vite";
 import { devServerDefaultOptions } from "honox/vite";
 import client from "honox/vite/client";
+import rehypeKatex from "rehype-katex";
 import rehypeSlug from "rehype-slug";
 import remarkBreaks from "remark-breaks";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import { visit } from "unist-util-visit";
 import AutoImport from "unplugin-auto-import/vite";
@@ -69,6 +71,7 @@ export default defineConfig(({ mode }) => {
           remarkBreaks,
           remarkGfm,
           remarkGithubPermalinks,
+          remarkMath,
         ],
         rehypePlugins: [
           [
@@ -95,6 +98,7 @@ export default defineConfig(({ mode }) => {
             });
           },
           rehypeSlug,
+          rehypeKatex,
         ],
       }),
     ],

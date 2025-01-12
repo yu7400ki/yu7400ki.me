@@ -100,6 +100,9 @@ export default jsxRenderer(({ children, Layout, frontmatter }) => {
             "& > * + *": {
               mt: "1.5em",
             },
+            "& [aria-hidden=true]": {
+              srOnly: true,
+            },
           })}
         >
           {children}
