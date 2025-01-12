@@ -49,7 +49,20 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       <h6 {...props} class={cx(props?.class, text({ size: "md" }))} />
     ),
     code: (props) => (
-      <code {...props} class={props?.class ?? cx(code(), css({ mx: 0.5 }))} />
+      <code
+        {...props}
+        class={
+          props?.class ??
+          cx(
+            code(),
+            css({
+              mx: 0.5,
+              maxW: "full",
+              overflow: "auto",
+            }),
+          )
+        }
+      />
     ),
     pre: ({ filename, ...props }) => (
       <pre
@@ -110,6 +123,23 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
               },
             },
           }),
+        )}
+      />
+    ),
+    span: (props) => (
+      <span
+        {...props}
+        class={cx(
+          props?.class,
+          props?.class?.includes("katex") &&
+            css({
+              display: "inline-block",
+              maxW: "full",
+              overflow: "auto",
+              "&[aria-hidden=true]": {
+                srOnly: true,
+              },
+            }),
         )}
       />
     ),
