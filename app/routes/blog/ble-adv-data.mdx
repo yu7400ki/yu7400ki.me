@@ -1,0 +1,275 @@
+---
+title: "BLEのAdvertising Dataを解析する"
+date: 2025-01-13
+---
+
+[RustとRaspberry Pi Pico WでBLEをスキャンする](/blog/pico-w-ble)からの続きものだったり。
+
+前回まででBLEのペリフェラルをスキャンすることが出来ました。今回はそのスキャン結果を解析してみます。
+
+この記事での目標は、デバイス名と16-bit UUIDを取得することです。
+
+## 環境
+
+- Raspberry Pi Pico W
+- Rust 1.83.0
+
+## Advertising Data
+
+Advertising Dataは以下のような構造が繰り返し出現する形式です。
+
+```plaintext
+: 1 byte  : Length byte               :
++---------+---------+--------+--------+---------+---------+--------+--------+
+| Length  | Data                      | Length  | Data                      | ...
++---------+---------+--------+--------+---------+---------+--------+--------+
+          : 1 byte  : Length - 1 byte :
+          +---------+--------+--------+
+          | AD Type | AD Data         |
+          +---------+--------+--------+
+```
+
+- Length: 1 byte
+- AD Type: 1 byte
+- AD Data: Length - 1 byte
+
+### AD Type
+
+AD Typeはそれなりの種類がありますので、ここではこの記事で使うものだけを紹介します。
+
+- 0x03: Complete List of 16-bit Service or Service Class UUIDs
+- 0x09: Complete Local Name
+
+その他については、[Assigned Numbers](https://www.bluetooth.com/specifications/assigned-numbers/)を参照してください。
+
+## パース
+
+```rust filename="src/adv.rs"
+pub struct AssignedNumber;
+
+impl AssignedNumber {
+    pub const COMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS: u8 = 0x03;
+    pub const COMPLETE_LOCAL_NAME: u8 = 0x09;
+}
+
+pub struct AdvData<'a> {
+    pub name: Option<&'a str>,
+    pub uuid: Option<&'a [u8]>,
+}
+
+impl AdvData<'_> {
+    pub fn parse(data: &[u8]) -> AdvData {
+        let mut name = None;
+        let mut uuid = None;
+
+        let mut i = 0;
+        while i < data.len() {
+            let length = data[i] as usize;
+            if length == 0 || i + 1 + length > data.len() {
+                break;
+            }
+
+            let ad_type = data[i + 1];
+            let ad_data = &data[i + 2..=i + length];
+
+            match ad_type {
+                AssignedNumber::COMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS => {
+                    uuid = Some(ad_data);
+                }
+                AssignedNumber::COMPLETE_LOCAL_NAME => {
+                    name = Some(core::str::from_utf8(ad_data).unwrap());
+                }
+                _ => {}
+            }
+
+            i += 1 + length;
+        }
+
+        AdvData { name, uuid }
+    }
+}
+```
+
+実装は至ってシンプルです。
+データの先頭から順にAD Typeを見ていき、それに応じてデータを取得しています。
+
+## スキャン
+
+```rust filename="src/scanner.rs"
+use bt_hci::cmd::le::{LeSetScanEnable, LeSetScanParams};
+use bt_hci::controller::ControllerCmdSync;
+use embassy_futures::join::join;
+use trouble_host::prelude::*;
+
+use crate::adv::AdvData;
+
+/// Size of L2CAP packets
+const L2CAP_MTU: usize = 128;
+
+/// Max number of connections
+const CONNECTIONS_MAX: usize = 1;
+
+/// Max number of L2CAP channels.
+const L2CAP_CHANNELS_MAX: usize = 3; // Signal + att + CoC
+
+type Resources<C> = HostResources<C, CONNECTIONS_MAX, L2CAP_CHANNELS_MAX, L2CAP_MTU>;
+
+pub async fn scan<C>(controller: C)
+where
+    C: Controller + ControllerCmdSync<LeSetScanParams> + ControllerCmdSync<LeSetScanEnable>,
+{
+    let mut resources = Resources::new(PacketQos::None);
+    let (_stack, _, mut central, mut runner) =
+        trouble_host::new(controller, &mut resources).build();
+
+    let config = ScanConfig {
+        ..Default::default()
+    };
+
+    log::info!("Scanning for peripheral...");
+    let _ = join(runner.run(), async {
+        loop {
+            let result = central.scan(&config).await.unwrap();
+            for report in result.iter() {
+                report
+                    .map(|report| {
+                        let adv_data = AdvData::parse(&report.data);
+                        if let Some(name) = adv_data.name {
+                            log::info!("Peripheral found: {}", name);
+                        }
+                    })
+                    .ok();
+            }
+        }
+    })
+    .await;
+}
+```
+
+スキャン結果を取得して、`AdvData`にパースしています。
+
+![スキャン結果](/img/blog/ble-adv-data/scan-name.png)
+
+デバイス名が取得できていることが確認できます。
+
+## UUID
+
+UUIDには事前に割り当てられた範囲が存在しており、Bluetooth_Base_UUIDと呼ばれています。
+Bluetooth_Base_UUIDの値は`00000000-0000-1000-8000-00805F9B34FB`です。
+
+この範囲のエイリアスとして、16bitと32bitのUUIDが存在しています。
+これらは以下のアルゴリズムで128bitのUUIDに変換できます。
+
+$$\text{128\_bit\_value} = \text{16\_bit\_value} \cdot 2^{96} + \text{Bluetooth\_Base\_UUID}$$
+$$\text{128\_bit\_value} = \text{32\_bit\_value} \cdot 2^{96} + \text{Bluetooth\_Base\_UUID}$$
+
+16bitのUUIDを取得する場合は、`uuid`を`u16`に変換してから上記のアルゴリズムを適用します。
+
+```rust filename="src/uuid.rs"
+use core::fmt;
+
+const BLUETOOTH_BASE_UUID: u128 = 0x00000000_0000_1000_8000_00805F9B34FB;
+
+pub struct Uuid(pub u128);
+
+impl fmt::Debug for Uuid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}",
+            (self.0 >> 96) as u32,
+            (self.0 >> 80) as u16,
+            (self.0 >> 64) as u16,
+            (self.0 >> 48) as u16,
+            self.0 as u64
+        )
+    }
+}
+
+impl From<u128> for Uuid {
+    fn from(value: u128) -> Self {
+        Uuid(value)
+    }
+}
+
+impl From<u32> for Uuid {
+    fn from(value: u32) -> Self {
+        let uuid = (value as u128) << 96 | BLUETOOTH_BASE_UUID;
+        Uuid(uuid)
+    }
+}
+
+impl From<u16> for Uuid {
+    fn from(value: u16) -> Self {
+        let uuid = (value as u128) << 96 | BLUETOOTH_BASE_UUID;
+        Uuid(uuid)
+    }
+}
+```
+
+```rust filename="src/adv.rs"
+use crate::uuid::Uuid; // [!code ++]
+
+...
+
+pub struct AdvData<'a> {
+    pub name: Option<&'a str>,
+    pub uuid: Option<&'a [u8]>, // [!code --]
+    pub uuid: Option<Uuid>, // [!code ++]
+}
+
+impl AdvData<'_> {
+...
+            match ad_type {
+                AssignedNumber::COMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS => {
+                    if ad_data.len() >= 2 {
+                        uuid = Some(ad_data); // [!code --]
+                        let value = u16::from_le_bytes([ad_data[0], ad_data[1]]); // [!code ++]
+                        uuid = Some(value.into()); // [!code ++]
+                    }
+                }
+                AssignedNumber::COMPLETE_LOCAL_NAME => {
+                    name = Some(core::str::from_utf8(ad_data).unwrap());
+                }
+                _ => {}
+            }
+...
+}
+```
+
+```rust filename="src/scanner.rs"
+...
+    log::info!("Scanning for peripheral...");
+    let _ = join(runner.run(), async {
+        loop {
+            let result = central.scan(&config).await.unwrap();
+            for report in result.iter() {
+                report
+                    .map(|report| {
+                        let adv_data = AdvData::parse(&report.data);
+                        if let Some(name) = adv_data.name {                           // [!code --]
+                            log::info!("Peripheral found: {}", name);                 // [!code --]
+                        }                                                             // [!code --]
+                        match (adv_data.name, adv_data.uuid) {                        // [!code ++]
+                            (Some(name), Some(uuid)) => {                             // [!code ++]
+                                log::info!("Peripheral found: {} {:?}", name, uuid);  // [!code ++]
+                            }                                                         // [!code ++]
+                            _ => {}                                                   // [!code ++]
+                        }                                                             // [!code ++]
+                    })
+                    .ok();
+            }
+        }
+    })
+    .await;
+...
+```
+
+UUIDも取得できるようになりました。
+
+![スキャン結果](/img/blog/ble-adv-data/scan-uuid.png)
+
+## 参考
+
+- [Bluetooth Core Specification](https://www.bluetooth.com/specifications/specs/core-specification-amended-5-4/)
+- [Assigned Numbers](https://www.bluetooth.com/specifications/assigned-numbers/)
