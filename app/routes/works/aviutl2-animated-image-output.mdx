@@ -1,0 +1,30 @@
+---
+title: AviUtl2 アニメーション画像出力プラグイン
+description: AviUtl ExEdit2でアニメーション画像を出力するプラグインセット
+thumbnail: /img/works/aviutl2-animated-image-output.png
+links:
+  - https://github.com/yu7400ki/aviutl2-animated-image-output
+  - https://yu7400ki.me/aviutl2-animated-image-output/
+date: 2025-08-22
+---
+
+[AviUtl ExEdit2](https://spring-fragrance.mints.ne.jp/aviutl/)のプラグインでアニメーション画像を出力するためのプラグインセットです。
+GIF、PNG、WebP、AVIFに対応しています。
+
+開発はRustで行っており、WebPとAVIFはlibwebpとlibavifのバインディングを利用しています。
+libavifに関しては、巷にあるバインディングが少し古く欲しい機能がなかったため、自分で作成しました。
+
+## 背景
+
+AviUtlは古くから愛されている無料動画編集ソフトウェアで、YouTubeやニコニコ動画などの動画投稿者に広く利用されています。
+特筆すべきは、その豊富なプラグイン群で、有志によって数多くの拡張機能が提供され、ユーザーは自分のニーズに合わせてAviUtlをカスタマイズできます。
+
+そんなAviUtlですが、2025/7/7に突如として、AviUtl ExEdit2がリリースされました。これは約6年ぶりとなる更新で、64bit化やインターフェイスの刷新など、生まれ変わったと言っても差し支えないほどの大規模なものでした。
+
+そんな折、PNGも約20年ぶりとなる仕様改訂が行われ、アニメーションPNG（APNG）が正式に仕様として採用されました。（時系列としてはこちらが先ですが）
+
+これらの出来事を受けて、AviUtl ExEdit2でアニメーション画像を出力するプラグインを作成しようと考えました。
+
+もともとはAviUtl2リリース&PNG仕様改訂記念として、アニメーションPNG出力プラグインを作成する予定でしたが、開発を進めるうちに、GIFなど他のフォーマットにも対応したくなり、最終的には4つのフォーマットに対応するプラグインセットとなりました。
+
+GIFやPNG（APNG）といった広く知られたフォーマットでユーザーの注目を集めつつ、WebPやAVIFといった新しいフォーマットにも触れてもらい、アニメーション画像におけるユーザーの選択肢を広げることができればと考えています。

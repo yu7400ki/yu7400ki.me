@@ -65,23 +65,25 @@ export default jsxRenderer(({ children, Layout, frontmatter }) => {
         >
           {frontmatter?.description}
         </p>
-        <div
-          class={css({
-            display: "grid",
-            justifyItems: "start",
-            gap: "1",
-            color: "fg.muted",
-            mb: "6",
-            fontFamily: "latin",
-          })}
-        >
-          {frontmatter?.links?.map((link) => (
-            <Link href={link} />
-          ))}
-        </div>
+        {frontmatter?.links && (
+          <div
+            class={css({
+              display: "grid",
+              justifyItems: "start",
+              gap: "1",
+              color: "fg.muted",
+              mb: "6",
+              fontFamily: "latin",
+            })}
+          >
+            {frontmatter?.links?.map((link) => (
+              <Link href={link} />
+            ))}
+          </div>
+        )}
         <img
           src={frontmatter?.thumbnail}
-          alt={frontmatter?.title}
+          alt=""
           class={css({
             w: "full",
             h: "auto",

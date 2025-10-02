@@ -21,6 +21,11 @@ function Footer() {
       label: "GitHub(yu7400ki)",
       logo: IconFa6BrandsGithub,
     },
+    {
+      link: "https://mixi.social/@yu7400ki",
+      label: "mixi2(@yu7400ki)",
+      logo: Mixi2,
+    },
   ];
 
   return (
@@ -32,7 +37,7 @@ function Footer() {
           placeItems: "center",
           pt: "16",
           pb: "20",
-          color: "fg.muted",
+          color: "fg.default",
           fontSize: "sm",
           fontFamily: "latin",
         })}
@@ -67,6 +72,35 @@ function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function Mixi2(props: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      xmlSpace="preserve"
+      style={{
+        fillRule: "evenodd",
+        clipRule: "evenodd",
+        strokeLinejoin: "round",
+        strokeMiterlimit: 2,
+      }}
+      viewBox="0 0 1645 1291"
+      width="1em"
+      height="1em"
+      {...props}
+    >
+      <title>mixi2</title>
+      <path
+        d="M0-111.302C-38.401-253.8-149.433-31.421-194.067-155.203c-30.722-85.202-157.128 12.6-187.752 131.288-17.55 68.046 16.689 111.68 106.382 53.649 71.397-46.196 115.343-34.398 107.721 48.024-3.39 36.65 38.984 64.74 101.194 25.633C3.885 59.138 21.092-33.042 0-111.302"
+        style={{
+          fill: "#fff",
+          fillRule: "nonzero",
+        }}
+        transform="translate(1609.424 780.848) scale(4.16667)"
+      />
+    </svg>
   );
 }
 
@@ -256,7 +290,9 @@ export default jsxRenderer(({ children, ...meta }, c) => {
           color: "fg.default",
           bg: "bg.canvas",
           lineHeight: "relaxed",
+          letterSpacing: "wider",
           fontFamily: "japanese",
+          fontSize: { base: "sm", md: "md" },
         })}
       >
         <main
