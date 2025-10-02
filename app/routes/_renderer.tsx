@@ -256,7 +256,9 @@ export default jsxRenderer(({ children, ...meta }, c) => {
           color: "fg.default",
           bg: "bg.canvas",
           lineHeight: "relaxed",
+          letterSpacing: "wider",
           fontFamily: "japanese",
+          fontSize: { base: "sm", md: "md" },
         })}
       >
         <main
