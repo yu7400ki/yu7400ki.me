@@ -66,7 +66,7 @@ export default createRoute(async (c) => {
                 borderWidth: "1",
               })}
               src={frontmatter.thumbnail}
-              alt={frontmatter.title}
+              alt=""
             />
             <h2
               class={css({

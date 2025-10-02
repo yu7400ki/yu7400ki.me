@@ -81,7 +81,7 @@ export default jsxRenderer(({ children, Layout, frontmatter }) => {
         </div>
         <img
           src={frontmatter?.thumbnail}
-          alt={frontmatter?.title}
+          alt=""
           class={css({
             w: "full",
             h: "auto",
