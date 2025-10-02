@@ -59,7 +59,7 @@ export default createRoute(async (c) => {
                 w: "full",
                 h: "auto",
                 aspectRatio: "16/9",
-                objectFit: "cover",
+                objectFit: "contain",
                 rounded: "xl",
                 mb: "2",
                 borderColor: "border.muted",
