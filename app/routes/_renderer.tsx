@@ -40,6 +40,7 @@ function Footer() {
           color: "fg.default",
           fontSize: "sm",
           fontFamily: "latin",
+          gridArea: "footer",
         })}
       >
         <p>&copy; 2025 yu7400ki</p>
@@ -140,6 +141,7 @@ function Navigation({ path }: { path: string }) {
         p: "1",
         fontFamily: "latin",
         fontSize: "sm",
+        gridArea: "nav",
         sm: {
           gap: "2",
         },
@@ -286,6 +288,11 @@ export default jsxRenderer(({ children, ...meta }, c) => {
         class={css({
           display: "grid",
           gridTemplateRows: "auto 1fr auto",
+          gridTemplateAreas: `
+            "main"
+            "footer"
+            "nav"
+          `,
           minH: "100dvh",
           color: "fg.default",
           bg: "bg.canvas",
@@ -295,15 +302,16 @@ export default jsxRenderer(({ children, ...meta }, c) => {
           fontSize: { base: "sm", md: "md" },
         })}
       >
+        <Navigation path={path} />
         <main
           class={css({
             minW: 0,
+            gridArea: "main",
           })}
         >
           {children}
         </main>
         <Footer />
-        <Navigation path={path} />
       </body>
     </html>
   );
