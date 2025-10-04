@@ -37,6 +37,7 @@ function Profile() {
             maxW: "56",
             aspectRatio: "1/1",
           })}
+          fetchpriority="high"
         />
         <div
           class={css({ display: "flex", flexDirection: "column", gap: "4" })}

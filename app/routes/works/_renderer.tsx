@@ -96,6 +96,7 @@ export default jsxRenderer(({ children, Layout, frontmatter }) => {
               mb: "8",
             },
           })}
+          fetchpriority="high"
         />
         <article
           class={css({
