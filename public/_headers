@@ -1,2 +1,5 @@
 /*.md
   Content-Type: text/markdown; charset=utf-8
+
+/static/*
+  Cache-Control: public, max-age=31556952, immutable
