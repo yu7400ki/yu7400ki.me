@@ -1,7 +1,10 @@
+// biome-ignore lint/correctness/noNodejsModules: build time only
+import path from "node:path";
 import ssg from "@hono/vite-ssg";
 import mdx from "@mdx-js/rollup";
 import rehypeShiki from "@shikijs/rehype";
 import { transformerNotationDiff } from "@shikijs/transformers";
+import fg from "fast-glob";
 import honox from "honox/vite";
 import { devServerDefaultOptions } from "honox/vite";
 import client from "honox/vite/client";
@@ -17,11 +20,12 @@ import AutoImport from "unplugin-auto-import/vite";
 import IconsResolver from "unplugin-icons/resolver";
 import Icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 import { remarkGithubPermalinks } from "./app/lib/github";
 
 const entry = "./app/server.ts";
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   if (mode === "client") {
     return {
       plugins: [
@@ -31,6 +35,18 @@ export default defineConfig(({ mode }) => {
       ],
     };
   }
+
+  const files = await fg("app/routes/**/*.mdx", { dot: true, onlyFiles: true });
+  const targets = files.map((p) => {
+    const dir = path.dirname(path.relative("app/routes", p));
+    const base = path.basename(p, path.extname(p));
+    return {
+      src: p,
+      dest: path.join(dir),
+      rename: `${base}.md`,
+    };
+  });
+
   return {
     build: {
       assetsDir: "static", // make all non-island asset imports map to the /dist/static directory when emitted
@@ -100,6 +116,9 @@ export default defineConfig(({ mode }) => {
           rehypeSlug,
           rehypeKatex,
         ],
+      }),
+      viteStaticCopy({
+        targets,
       }),
     ],
   };
