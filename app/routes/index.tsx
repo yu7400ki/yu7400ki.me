@@ -9,9 +9,6 @@ function Profile() {
       class={css({
         display: "grid",
         gap: "16",
-        md: {
-          gap: "32",
-        },
       })}
     >
       <div
@@ -34,7 +31,7 @@ function Profile() {
           class={css({
             rounded: "full",
             w: "full",
-            maxW: "56",
+            maxW: "64",
             aspectRatio: "1/1",
           })}
           fetchpriority="high"
@@ -61,14 +58,6 @@ function Profile() {
             >
               yu7400ki
             </h1>
-            <p
-              class={css({
-                fontSize: "0.5em",
-                color: "colorPalette.text",
-              })}
-            >
-              Aiming to be a front-end engineer.
-            </p>
           </div>
         </div>
       </div>
