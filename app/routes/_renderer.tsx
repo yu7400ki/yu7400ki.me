@@ -113,11 +113,6 @@ function Navigation({ path }: { path: string }) {
       icon: IconLucideHome,
     },
     {
-      label: "Works",
-      href: "/works",
-      icon: IconLucideCode,
-    },
-    {
       label: "Blog",
       href: "/blog",
       icon: IconLucideLayers,
