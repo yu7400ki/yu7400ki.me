@@ -1,0 +1,295 @@
+---
+title: "Reactでconfirmダイアログを仕込む"
+date: 2026-03-04
+---
+
+日曜日。
+コードを書く。
+
+`window.confirm`というAPIがある。呼べば確認ダイアログが出て、ユーザーがOKを押せばtrue、キャンセルを押せばfalseが返る。
+
+```typescript
+const handleClick = () => {
+  if (window.confirm("本当に削除しますか？")) {
+    // 削除処理
+  }
+};
+```
+
+呼ぶ。訊かれる。答える。返る。
+余計なものが、何もない。
+なんか素敵だ。
+
+ところが、Reactの世界だと、こうはいかない。
+
+```typescript
+const [pendingId, setPendingId] = useState<string | null>(null);
+
+const handleClick = (id: string) => {
+  setPendingId(id);
+};
+
+const handleConfirm = () => {
+  if (pendingId) {
+    // pendingIdを使って削除処理
+  }
+  setPendingId(null);
+};
+```
+
+stateが散る。ボイラープレートが増える。
+ダイアログが一つ増えるたびに、同じことを繰り返す。
+これでは、いけない。
+
+`window.confirm`の、あの素朴な体験を、Reactのレンダリングモデルを壊さずに取り戻していく。
+
+## 完成のイメージ
+
+インターフェイスから考えるのが好きだ。
+使う側の手触りを先に決めて、実装はあとから整える。完成のイメージはこんな感じ。
+
+```typescript
+const confirm: (message: string) => Promise<boolean>;
+
+const handleClick = async () => {
+  if (await confirm("本当に削除しますか？")) {
+    // 削除処理
+  }
+};
+```
+
+呼ぶだけで良い。
+awaitひとつで、ユーザーの返答を待つ。`window.confirm`と同じ佇まいだ。
+
+stateもhooksも用意する必要はない。
+必要なのは、confirmを呼ぶこと。たったこれだけ。
+
+アプリのルートには、`<ConfirmHost />`を一つ、置いておく。
+
+```tsx
+function App() {
+  return (
+    <>
+      <ConfirmHost />
+      {/* その他のコンポーネント */}
+    </>
+  );
+}
+```
+
+`<ConfirmHost />`は、ダイアログの表示を一手に引き受ける。アプリのどこから`confirm`を呼んでも、ここが応える。
+たったこれだけのコードだ。
+
+## 実装
+
+仕込んでいく。
+
+まず、キューを用意する。`confirm`が呼ばれるたびに、メッセージと`resolve`関数をここに積んでいく。
+
+```typescript
+type QueueItem = {
+  id: string;
+  message: string;
+  resolve: (value: boolean) => void;
+};
+
+const queue: QueueItem[] = [];
+
+export function confirm(message: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const id = crypto.randomUUID();
+    queue.push({
+      id,
+      message,
+      resolve: (value) => {
+        queue.shift();
+        resolve(value);
+      },
+    });
+  });
+}
+```
+
+Promiseの`resolve`をそのまま外に渡すのではなく、一枚ラップしている。ユーザーがOKまたはキャンセルを押した瞬間に、キューの先頭を`shift`で取り除き、それから`resolve`で結果を返す。キューの管理と結果の返却を、一手にまとめている。
+
+`<ConfirmDialog />`コンポーネントをこしらえる。
+
+```tsx
+function ConfirmDialog({ item }: { item: QueueItem }) {
+  return (
+    <div className="confirm-dialog">
+      <p>{item.message}</p>
+      <button onClick={() => item.resolve(true)}>OK</button>
+      <button onClick={() => item.resolve(false)}>キャンセル</button>
+    </div>
+  );
+}
+```
+
+どんな実装をしたって構わない。
+
+最後に、`<ConfirmHost />`コンポーネントを実装する。
+
+```tsx
+function ConfirmHost() {
+  const current = queue[0];
+
+  if (!current) {
+    return null;
+  }
+
+  return <ConfirmDialog key={current.id} item={current} />;
+}
+```
+
+これでは、いけない。
+`queue`はReactの状態管理の外にある。Reactはこの配列の変化を知らない。これでは、キューにアイテムが追加されても、`<ConfirmHost />`は再レンダリングされない。
+
+外部ストアと連携するには、[`useSyncExternalStore`](https://ja.react.dev/reference/react/useSyncExternalStore)フックが使える。Reactの外にある状態を、Reactのレンダリングサイクルに同期させる。
+
+購読の仕組みを整える。
+
+```tsx
+const subscribers = new Set<() => void>();
+
+function notify() {
+  subscribers.forEach((callback) => callback());
+}
+
+function subscribe(callback: () => void) {
+  subscribers.add(callback);
+  return () => subscribers.delete(callback);
+}
+
+function getSnapshot() {
+  return queue[0] || null;
+}
+```
+
+`notify`で全員に通知し、`subscribe`で登録と解除を行う。`getSnapshot`は、キューの先頭を返す。`useSyncExternalStore`はこの`getSnapshot`の戻り値が変わったとき、コンポーネントを再レンダリングしてくれる。
+
+`confirm`関数に、通知を仕込む。
+
+```tsx
+function confirm(message: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const id = crypto.randomUUID();
+    queue.push({
+      id,
+      message,
+      resolve: (value) => {
+        queue.shift();
+        resolve(value);
+        notify(); // [!code ++]
+      },
+    });
+    notify(); // [!code ++]
+  });
+}
+```
+
+`notify()`は二箇所に入る。キューに積んだとき。キューから取り除いたとき。これで、ダイアログの出現と消滅の両方が、Reactに伝わる。
+
+```tsx
+function ConfirmHost() {
+  const current = queue[0]; // [!code --]
+  const current = useSyncExternalStore(subscribe, getSnapshot); // [!code ++]
+
+  if (!current) {
+    return null;
+  }
+
+  return <ConfirmDialog key={current.id} item={current} />;
+}
+```
+
+これで完成だ。
+
+`key`に`current.id`を渡しているのは、ダイアログが入れ替わるたびにコンポーネントを新しく作り直すため。前のダイアログのstateが次のダイアログに引き継がれない。地味だが、大事な仕事をしている。
+
+全体像
+
+```tsx
+import { useSyncExternalStore } from "react";
+
+type QueueItem = {
+  id: string;
+  message: string;
+  resolve: (value: boolean) => void;
+};
+
+const queue: QueueItem[] = [];
+const subscribers = new Set<() => void>();
+
+function notify() {
+  subscribers.forEach((callback) => callback());
+}
+
+function subscribe(callback: () => void) {
+  subscribers.add(callback);
+  return () => subscribers.delete(callback);
+}
+
+function getSnapshot() {
+  return queue[0] || null;
+}
+
+export function confirm(message: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const id = crypto.randomUUID();
+    queue.push({
+      id,
+      message,
+      resolve: (value) => {
+        queue.shift();
+        resolve(value);
+        notify();
+      },
+    });
+    notify();
+  });
+}
+
+function ConfirmDialog({ item }: { item: QueueItem }) {
+  return (
+    <div className="confirm-dialog">
+      <p>{item.message}</p>
+      <button onClick={() => item.resolve(true)}>OK</button>
+      <button onClick={() => item.resolve(false)}>キャンセル</button>
+    </div>
+  );
+}
+
+export function ConfirmHost() {
+  const current = useSyncExternalStore(subscribe, getSnapshot);
+
+  if (!current) {
+    return null;
+  }
+
+  return <ConfirmDialog key={current.id} item={current} />;
+}
+```
+
+必要なのはたったこれだけ。
+
+## 応用
+
+このパターンは、confirmダイアログに限らない。
+
+トースト通知。同じキューベースで作れる。`resolve`の代わりに`timeout`で`shift`すれば良い。
+
+何に使ったって構わない。
+
+共通するのは、「任意の場所から命令的に呼び出したいが、レンダリングは宣言的に行いたい」という要件。
+
+## まとめ
+
+Reactの外にキューを積むことで、どこからでも呼び出せるようにする。`useSyncExternalStore`で、Reactと外の状態を同期する。`Promise`の`resolve`をラップすることで、キュー操作と結果の返却を一手にまとめる。キューで、複数のダイアログを直列に繋ぐ。
+
+Reactの宣言的なUIと、命令的なAPIの橋渡し。
+`window.confirm`のような体験を、Reactの世界でも実現できるようになった。
+
+なければないで構わない。
+
+みんなもやってみてね。
